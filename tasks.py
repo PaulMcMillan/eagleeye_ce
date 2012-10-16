@@ -38,7 +38,6 @@ options.add_argument('--disable-java')
 options.add_argument('--incognito')
 #options.add_argument('--kiosk')
 # http://peter.sh/experiments/chromium-command-line-switches/
-driver = webdriver.Remote(service.service_url, desired_capabilities=options.to_capabilities())
 
 
 @celery.task
@@ -59,6 +58,9 @@ def get_screenshot(result):
     #print "get screenshot: %s" % result	
     ip = result['ip']
     try:
+        driver = webdriver.Remote(service.service_url,
+                              desired_capabilities=options.to_capabilities())
+
         driver.get('http://%s' % ip)
         logger.info('Loaded %s: %s' % (ip, driver.title))
         # this seems to require an absolute path for some reason

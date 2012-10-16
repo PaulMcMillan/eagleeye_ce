@@ -1,1 +1,1 @@
-celery -A tasks worker --loglevel=info --concurrency=1 --soft-time-limit=10 --time-limit=25
+celery -A tasks worker --loglevel=info --concurrency=5 --soft-time-limit=10 --time-limit=25

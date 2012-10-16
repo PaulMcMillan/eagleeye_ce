@@ -1,0 +1,1 @@
+celery -A foreman worker --loglevel=info --concurrency=5 --soft-time-limit=7 --time-limit=25

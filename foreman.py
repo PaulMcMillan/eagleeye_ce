@@ -64,6 +64,8 @@ def get_screenshot(result):
         p.terminate()
         sleep(1)
         p.kill()
+        print "killing"
         os.killpg(p.pid, signal.SIGKILL)
+        print "got to the wait"
         p.wait()
         print "got to the end of a wait"

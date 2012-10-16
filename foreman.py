@@ -1,7 +1,9 @@
 import os
+import signal
 import logging
 import subprocess
 
+import requests
 import shodan
 from celery import Celery, group, exceptions
 
@@ -26,15 +28,42 @@ def get_shodan_results(page=1):
         get_shodan_results.delay(page=page+1)
         return res
 
+
 @celery.task
 def get_screenshot(result):
     print "get screenshot: %s" % result	
     ip = result['ip']
     try:
-        p = subprocess.Popen(['./wkhtmltoimage-amd64', '--width', '600', '--load-error-handling', 'ignore', 'http://%s/' % ip, 'out/%s.png' % ip])
+        res = requests.head('http://%s/' % ip, timeout=2)
+    except requests.exceptions.Timeout:
+        return
+    except requests.exceptions.ConnectionError:
+        logger.info('Connection Error to %s', ip)
+        return
+    try:
+        def subprocess_setup():
+            # Python installs a SIGPIPE handler by default. This is
+            # usually not what non-Python subprocesses expect.
+            signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+
+        cmd = ['./wkhtmltoimage-amd64',
+               '--width', '600',
+               '--load-error-handling', 'ignore',
+               'http://%s/' % ip,
+               'out/%s.png' % ip]
+        os.setpgrp()
+        p = subprocess.Popen(cmd, preexec_fn=subprocess_setup,
+                             stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE,
+                             creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
     except exceptions.SoftTimeLimitExceeded:
         logger.info('Terminating overtime process')
+        p.stdout.close()
+        sleep(1)
         p.terminate()
-
-
-
+        sleep(1)
+        p.kill()
+        os.killpg(p.pid, signal.SIGKILL)
+        p.wait()
+        print "got to the end of a wait"

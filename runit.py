@@ -9,8 +9,8 @@ logger.setLevel(logging.DEBUG)
 from celery import Celery
 inspect = Celery().control.inspect()
 
-#res = foreman.get_shodan_results.delay()
-res = foreman.get_screenshot({'ip': '54.245.108.85'})
+res = foreman.get_shodan_results.delay()
+#res = foreman.get_screenshot.delay({'ip': '54.245.108.85'})
 while True:
     print res.status
     sleep(1)

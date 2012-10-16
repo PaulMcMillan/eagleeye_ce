@@ -55,8 +55,8 @@ def get_screenshot(result):
         p = subprocess.Popen(cmd, preexec_fn=subprocess_setup,
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE,
-                             creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+                             stderr=subprocess.PIPE)
+
     except exceptions.SoftTimeLimitExceeded:
         logger.info('Terminating overtime process')
         p.stdout.close()

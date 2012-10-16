@@ -1,5 +1,5 @@
 from time import sleep
-import foreman
+import tasks
 import logging
 
 logger = logging.getLogger('foreman')
@@ -9,7 +9,7 @@ logger.setLevel(logging.DEBUG)
 from celery import Celery
 inspect = Celery().control.inspect()
 
-res = foreman.get_shodan_results.delay()
+res = tasks.get_shodan_results.delay()
 #res = foreman.get_screenshot.delay({'ip': '54.245.108.85'})
 while True:
     print res.status

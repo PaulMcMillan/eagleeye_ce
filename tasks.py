@@ -9,6 +9,7 @@ from celery import Celery
 from celery import group
 from celery import exceptions
 from celery import signals
+import selenium.webdriver.chrome.service as service
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,9 @@ celery = Celery('tasks', backend='redis://localhost', broker='amqp://')
 display = Display(visible=0, size=(600, 600))
 display.start()
 
+service = service.Service('chromedriver')
+service.start()
+
 # Set up the webdriver
 options = webdriver.ChromeOptions()
 options.add_argument('--start-maximized')
@@ -34,7 +38,7 @@ options.add_argument('--disable-java')
 options.add_argument('--incognito')
 #options.add_argument('--kiosk')
 # http://peter.sh/experiments/chromium-command-line-switches/
-driver = webdriver.Chrome(chrome_options=options)
+driver = webdriver.Remote(service.service_url, desired_capabilities=options.to_capabilities())
 
 
 @celery.task
@@ -52,7 +56,7 @@ def get_shodan_results(page=1):
 
 @celery.task
 def get_screenshot(result):
-    print "get screenshot: %s" % result	
+    #print "get screenshot: %s" % result	
     ip = result['ip']
     try:
         driver.get('http://%s' % ip)
@@ -68,3 +72,4 @@ def get_screenshot(result):
 def worker_shutdown(sender=None, conf=None, **kwargs):
     logger.info('Shutting down worker...')
     driver.quit()
+    service.stop()

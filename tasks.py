@@ -21,7 +21,7 @@ except KeyError:
     exit()
 
 QUERY = 'port:80 amazon'
-celery = Celery('tasks', backend='redis://localhost', broker='amqp://')
+celery = Celery('tasks', broker='amqp://')
 
 
 # set up the xvfb display
@@ -75,3 +75,6 @@ def worker_shutdown(sender=None, conf=None, **kwargs):
     logger.info('Shutting down worker...')
     driver.quit()
     service.stop()
+
+if __name__ == '__main__':
+    get_shodan_results.delay()

@@ -44,7 +44,7 @@ options.add_argument('--incognito')
 # http://peter.sh/experiments/chromium-command-line-switches/
 
 
-@celery.task
+@celery.task(soft_time_limit=30, time_limit=60)
 def get_shodan_results(page=1):
     logger.info("getting results: %s", page)
     api = shodan.WebAPI(API_KEY)

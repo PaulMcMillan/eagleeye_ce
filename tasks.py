@@ -75,6 +75,3 @@ def worker_shutdown(sender=None, conf=None, **kwargs):
     logger.info('Shutting down worker...')
     driver.quit()
     service.stop()
-
-if __name__ == '__main__':
-    get_shodan_results.delay()

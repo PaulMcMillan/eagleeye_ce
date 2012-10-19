@@ -16,8 +16,12 @@ logger = logging.getLogger(__name__)
 try:
     API_KEY = os.environ['SHODAN_API_KEY']
 except KeyError:
-    print ("Put your shodan API key in the environment with:\n"
-           "export SHODAN_API_KEY=yourkeyhere")
+    try:
+        API_KEY = open('SHODAN_API_KEY').read()
+    except IOError:
+        print ("Put your shodan API key in the environment with\n"
+               "export SHODAN_API_KEY=yourkeyhere\n"
+               "or put your key in a file named SHODAN_API_KEY.")
     exit()
 
 QUERY = 'port:80 amazon'

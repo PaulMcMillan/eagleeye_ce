@@ -30,3 +30,4 @@ pip-log.txt
 chromedriver
 chromedriver.log
 openrc.sh
+SHODAN_API_KEY

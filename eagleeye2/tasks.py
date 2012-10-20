@@ -13,6 +13,8 @@ from celery import Task
 from celery import signals
 import selenium.webdriver.chrome.service as service
 
+import cleanup
+
 logger = logging.getLogger(__name__)
 
 try:
@@ -28,6 +30,7 @@ except KeyError:
 
 QUERY = 'server: GoAhead-Webs login.asp'
 celery = Celery('tasks', broker='amqp://')
+celery.config_from_object('celeryconfig')
 
 
 # set up the xvfb display
@@ -72,6 +75,16 @@ class WebDriverTask(Task):
                 desired_capabilities=options.to_capabilities())
         return self._driver
 
+    def task_cleanup(self):
+        # do we need this now?
+        pass
+#        print "DOING CLEANUP"
+#        if self._driver:
+#            print self._driver
+#            self._driver.quit()
+#            self._driver = None
+
+
 def dismiss_alerts(driver):
     # handle any possible blocking alerts
     alert = driver.switch_to_alert()
@@ -84,7 +97,7 @@ def dismiss_alerts(driver):
 
 
 @celery.task(base=WebDriverTask)
-def get_screenshot(result):
+def get_screenshot(result, task_id=None):
     ip = result['ip']
     try:
         driver = get_screenshot.driver
@@ -99,16 +112,13 @@ def get_screenshot(result):
 
     except exceptions.SoftTimeLimitExceeded:
         logger.info('Terminating overtime process')
+    except cleanup.CleanupException:
+        pass
     except Exception as e:
-        print 'MAJOR PROBEM: ', ip
-        print e
+        print 'MAJOR PROBEM: ', ip, e
         raise
-
 
 @signals.worker_shutdown.connect
 def worker_shutdown(sender=None, conf=None, **kwargs):
-    print sender, conf, kwargs
-    sender.driver.quit()
     logger.info('Shutting down worker...')
-    driver.quit()
-    service.stop()
+#    service.stop()

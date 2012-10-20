@@ -75,6 +75,11 @@ class WebDriverTask(Task):
                 desired_capabilities=options.to_capabilities())
         return self._driver
 
+    def restart_driver(self):
+        if self._driver:
+            self._driver.quit()
+            self._driver = None
+
     def task_cleanup(self):
         # do we need this now?
         pass
@@ -112,6 +117,8 @@ def get_screenshot(result, task_id=None):
 
     except exceptions.SoftTimeLimitExceeded:
         logger.info('Terminating overtime process')
+        get_screenshot.restart_driver()
+        
     except cleanup.CleanupException:
         pass
     except Exception as e:

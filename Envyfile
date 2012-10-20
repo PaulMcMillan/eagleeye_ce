@@ -2,6 +2,6 @@ project_config:
     name: eagleeye
     image_name: Ubuntu Precise (12.04)
     remote_user: ubuntu
-    flavor_name: m1.small
+    flavor_name: m1.xlarge
     provision_script_path: './provision_script.sh'
     auto_provision: True

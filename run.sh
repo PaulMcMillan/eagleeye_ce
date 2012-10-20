@@ -1,3 +1,3 @@
 celery purge
-celery call tasks.get_shodan_results
-celery -A tasks worker --loglevel=info --concurrency=2 --soft-time-limit=10 --time-limit=25
+celery call eagleeye2.tasks.get_shodan_results
+celery -A eagleeye2.tasks worker --loglevel=info --soft-time-limit=30 --time-limit=45 --concurrency=3

@@ -24,7 +24,7 @@ except KeyError:
         print ("Put your shodan API key in the environment with\n"
                "export SHODAN_API_KEY=yourkeyhere\n"
                "or put your key in a file named SHODAN_API_KEY.")
-    exit()
+        exit()
 
 QUERY = 'server: GoAhead-Webs login.asp'
 celery = Celery('tasks', broker='amqp://')

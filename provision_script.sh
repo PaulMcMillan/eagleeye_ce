@@ -9,4 +9,4 @@ sudo pip install celery selenium pyvirtualdisplay shodan
 curl http://chromedriver.googlecode.com/files/chromedriver_linux64_23.0.1240.0.zip | funzip > chromedriver
 chmod +x chromedriver
 sudo mv chromedriver /usr/bin/chromedriver
-git clone git@github.com:PaulMcMillan/eagleeye2.git
+git clone git@github.com:PaulMcMillan/eagleeye_ce.git

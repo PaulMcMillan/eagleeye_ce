@@ -25,4 +25,4 @@ def install_pool_process_sighandlers(**kwargs):
     platforms.signals["TERM"] = cleanup_after_tasks
     platforms.signals["INT"] = cleanup_after_tasks
 
-worker_process_init.connect(install_pool_process_sighandlers)
+#worker_process_init.connect(install_pool_process_sighandlers)

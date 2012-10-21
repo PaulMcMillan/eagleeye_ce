@@ -5,13 +5,14 @@ import subprocess
 from pyvirtualdisplay import Display
 from selenium import webdriver
 import selenium
+import httplib
 import shodan
 from celery import Celery
 from celery import group
 from celery import exceptions
 from celery import Task
 from celery import signals
-import selenium.webdriver.chrome.service as service
+import selenium.webdriver.chrome.service as chrome_service
 
 import cleanup
 
@@ -37,20 +38,63 @@ celery.config_from_object('celeryconfig')
 display = Display(visible=0, size=(600, 600))
 display.start()
 
-service = service.Service('chromedriver')
-service.start()
-
 # Set up the webdriver
 options = webdriver.ChromeOptions()
 options.add_argument('--start-maximized')
 options.add_argument('--disable-java')
 options.add_argument('--incognito')
+options.add_argument('--use-mock-keychain')
 #options.add_argument('--kiosk')
 # http://peter.sh/experiments/chromium-command-line-switches/
 
 
-@celery.task(soft_time_limit=300, time_limit=600)
-def get_shodan_results(page=1):
+class WebDriverTask(Task):
+    abstract = True
+    _driver = None
+    _service = None
+
+    @property
+    def service(self):
+        if self._service is None:
+            self._service = chrome_service.Service('chromedriver')
+            self._service.start()
+        return self._service
+
+    @property
+    def driver(self):
+        if self._driver is None:
+            self._driver = webdriver.Remote(
+                self.service.service_url,
+                desired_capabilities=options.to_capabilities())
+        return self._driver
+
+    def terminate_driver(self):
+        logger.info('Terminating webdriver.')
+        # Yeah... things go wrong here, we want to recover robustly.
+        try:
+            if self._driver:
+                # Don't quit the driver here because it often hangs
+                print "stopped driver."
+                self._driver = None
+        except Exception:
+            # cringe... but shit goes wrong often
+            pass
+
+        try:
+            if self._service:
+                self._service.stop()
+                self._service = None
+        except Exception:
+            #yeee
+            pass
+
+    def task_cleanup(self):
+        # do we need this now?
+        pass
+
+
+@celery.task(base=WebDriverTask, soft_time_limit=300, time_limit=600)
+def get_shodan_results(page=3):
     logger.info("Fetching shodan results page: %s", page)
     api = shodan.WebAPI(API_KEY)
     try:
@@ -63,35 +107,9 @@ def get_shodan_results(page=1):
             get_screenshot.delay(r)
         return res
 
-class WebDriverTask(Task):
-    abstract = True
-    _driver = None
-
-    @property
-    def driver(self):
-        if self._driver is None:
-            self._driver = webdriver.Remote(
-                service.service_url,
-                desired_capabilities=options.to_capabilities())
-        return self._driver
-
-    def restart_driver(self):
-        if self._driver:
-            self._driver.quit()
-            self._driver = None
-
-    def task_cleanup(self):
-        # do we need this now?
-        pass
-#        print "DOING CLEANUP"
-#        if self._driver:
-#            print self._driver
-#            self._driver.quit()
-#            self._driver = None
-
 
 def dismiss_alerts(driver):
-    # handle any possible blocking alerts
+    # handle any possible blocking alerts because selenium is stupid
     alert = driver.switch_to_alert()
     try:
         alert.dismiss()
@@ -104,6 +122,7 @@ def dismiss_alerts(driver):
 @celery.task(base=WebDriverTask)
 def get_screenshot(result, task_id=None):
     ip = result['ip']
+    logger.info('Loading %s', ip)
     try:
         driver = get_screenshot.driver
         driver.get('http://%s' % ip)
@@ -114,18 +133,21 @@ def get_screenshot(result, task_id=None):
         driver.get_screenshot_as_file(os.path.join(os.getcwd(),
                                                    'out/%s.png' % ip))
         driver.get('about:blank')
-
     except exceptions.SoftTimeLimitExceeded:
         logger.info('Terminating overtime process')
-        get_screenshot.restart_driver()
-        
-    except cleanup.CleanupException:
-        pass
+        get_screenshot.terminate_driver()
+    except (selenium.common.exceptions.WebDriverException,
+            httplib.BadStatusLine):
+        # just kill it, alright?
+        get_screenshot.terminate_driver()
+#    except cleanup.CleanupException:
+#        pass
     except Exception as e:
+        print repr(e)
         print 'MAJOR PROBEM: ', ip, e
-        raise
+        get_screenshot.terminate_driver()
+#        raise
 
 @signals.worker_shutdown.connect
 def worker_shutdown(sender=None, conf=None, **kwargs):
     logger.info('Shutting down worker...')
-#    service.stop()

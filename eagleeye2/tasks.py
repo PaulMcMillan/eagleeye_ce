@@ -38,6 +38,7 @@ celery.config_from_object('celeryconfig')
 display = Display(visible=0, size=(600, 600))
 display.start()
 
+
 # Set up the webdriver
 options = webdriver.ChromeOptions()
 options.add_argument('--start-maximized')
@@ -94,7 +95,7 @@ class WebDriverTask(Task):
 
 
 @celery.task(base=WebDriverTask, soft_time_limit=300, time_limit=600)
-def get_shodan_results(page=3):
+def get_shodan_results(page=1):
     logger.info("Fetching shodan results page: %s", page)
     api = shodan.WebAPI(API_KEY)
     try:
@@ -132,6 +133,7 @@ def get_screenshot(result, task_id=None):
         # this seems to require an absolute path for some reason
         driver.get_screenshot_as_file(os.path.join(os.getcwd(),
                                                    'out/%s.png' % ip))
+        # try going to a blank page so we get an error now if we can't
         driver.get('about:blank')
     except exceptions.SoftTimeLimitExceeded:
         logger.info('Terminating overtime process')
@@ -146,7 +148,8 @@ def get_screenshot(result, task_id=None):
         print repr(e)
         print 'MAJOR PROBEM: ', ip, e
         get_screenshot.terminate_driver()
-#        raise
+        #raise
+
 
 @signals.worker_shutdown.connect
 def worker_shutdown(sender=None, conf=None, **kwargs):

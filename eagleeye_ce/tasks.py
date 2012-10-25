@@ -29,7 +29,7 @@ except KeyError:
                "or put your key in a file named SHODAN_API_KEY.")
         exit()
 
-QUERY = 'server: GoAhead-Webs login.asp'
+QUERY = 'org:cern'
 celery = Celery('tasks')
 celery.config_from_object('celeryconfig')
 
@@ -103,7 +103,8 @@ def get_shodan_results(page=1):
     except shodan.api.WebAPIError:
         logger.info('Finished shodan results with %s page(s).', page -1)
     else:
-        get_shodan_results.delay(page=page+1)
+        if res:
+            get_shodan_results.delay(page=page+1)
         for r in res.get('matches', []):
             get_screenshot.delay(r)
         return res
@@ -121,9 +122,9 @@ def dismiss_alerts(driver):
 
 
 @celery.task(base=WebDriverTask)
-def get_screenshot(result, task_id=None):
+def get_screenshot(result):
     ip = result['ip']
-    logger.info('Loading %s', ip)
+    logger.info('Loading %s %s', get_screenshot.request.id, ip)
     try:
         driver = get_screenshot.driver
         driver.get('http://%s' % ip)
@@ -136,7 +137,8 @@ def get_screenshot(result, task_id=None):
         # try going to a blank page so we get an error now if we can't
         driver.get('about:blank')
     except exceptions.SoftTimeLimitExceeded:
-        logger.info('Terminating overtime process')
+        logger.info('Terminating overtime process: %s %s',
+                    get_screenshot.request.id, ip)
         get_screenshot.terminate_driver()
     except (selenium.common.exceptions.WebDriverException,
             httplib.BadStatusLine):

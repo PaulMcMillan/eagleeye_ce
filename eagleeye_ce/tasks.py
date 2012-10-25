@@ -1,10 +1,8 @@
 import os
-import signal
 import logging
 
-import pyvirtualdisplay
-
 import httplib
+import pyvirtualdisplay
 import shodan
 
 from celery import Task

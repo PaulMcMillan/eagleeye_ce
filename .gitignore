@@ -26,6 +26,10 @@ pip-log.txt
 #Mr Developer
 .mr.developer.cfg
 
+#Emacs temp files
+\#*#
+*~
+
 # Project-specific files
 chromedriver
 chromedriver.log

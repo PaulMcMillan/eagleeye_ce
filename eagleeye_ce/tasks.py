@@ -123,5 +123,5 @@ def get_screenshot(result):
         get_screenshot.terminate_driver()
     except Exception as e:
         print repr(e)
-        print 'MAJOR PROBEM: ', ip, e
+        print 'MAJOR PROBLEM: ', ip, e
         get_screenshot.terminate_driver()

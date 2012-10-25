@@ -14,9 +14,9 @@ from celery import Task
 from celery import signals
 import selenium.webdriver.chrome.service as chrome_service
 
-import cleanup
 
 logger = logging.getLogger(__name__)
+
 
 try:
     API_KEY = os.environ['SHODAN_API_KEY']
@@ -70,28 +70,20 @@ class WebDriverTask(Task):
         return self._driver
 
     def terminate_driver(self):
+        """ Things go wrong with the webdriver; we want to recover robustly """
         logger.info('Terminating webdriver.')
-        # Yeah... things go wrong here, we want to recover robustly.
-        try:
-            if self._driver:
-                # Don't quit the driver here because it often hangs
-                print "stopped driver."
-                self._driver = None
-        except Exception:
-            # cringe... but shit goes wrong often
-            pass
 
-        try:
-            if self._service:
+        # Don't quit the driver here because it often hangs
+        self._driver = None
+
+        if self._service is not None:
+            try:
                 self._service.stop()
-                self._service = None
-        except Exception:
-            #yeee
-            pass
-
-    def task_cleanup(self):
-        # do we need this now?
-        pass
+            except Exception:
+                # This is really bad...
+                pass
+        # throw away the old one no matter what
+        self._service = None
 
 
 @celery.task(base=WebDriverTask, soft_time_limit=300, time_limit=600)
@@ -144,15 +136,7 @@ def get_screenshot(result):
             httplib.BadStatusLine):
         # just kill it, alright?
         get_screenshot.terminate_driver()
-#    except cleanup.CleanupException:
-#        pass
     except Exception as e:
         print repr(e)
         print 'MAJOR PROBEM: ', ip, e
         get_screenshot.terminate_driver()
-        #raise
-
-
-@signals.worker_shutdown.connect
-def worker_shutdown(sender=None, conf=None, **kwargs):
-    logger.info('Shutting down worker...')

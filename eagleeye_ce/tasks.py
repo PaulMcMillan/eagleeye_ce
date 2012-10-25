@@ -1,19 +1,17 @@
-import os
-import logging
-
 import httplib
-import pyvirtualdisplay
-import shodan
+import logging
+import os
 
-from celery import Task
 import celery.exceptions as celery_exceptions
-
-from selenium import webdriver
-import selenium.webdriver.chrome.service as chrome_service
+import pyvirtualdisplay
 import selenium.common.exceptions
+import selenium.webdriver.chrome.service as chrome_service
+import shodan
+from celery import Task
+from selenium import webdriver
 
-from eagleeye_ce import celery
 from eagleeye_ce import API_KEY
+from eagleeye_ce import celery
 
 
 logger = logging.getLogger(__name__)

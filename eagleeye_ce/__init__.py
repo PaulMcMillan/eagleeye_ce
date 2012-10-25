@@ -1,5 +1,5 @@
-import os
 import logging
+import os
 
 from celery import Celery
 

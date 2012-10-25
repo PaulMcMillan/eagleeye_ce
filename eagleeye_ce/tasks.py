@@ -29,7 +29,7 @@ except KeyError:
                "or put your key in a file named SHODAN_API_KEY.")
         exit()
 
-QUERY = 'org:cern'
+
 celery = Celery('tasks')
 celery.config_from_object('celeryconfig')
 
@@ -95,16 +95,16 @@ class WebDriverTask(Task):
 
 
 @celery.task(base=WebDriverTask, soft_time_limit=300, time_limit=600)
-def get_shodan_results(page=1):
-    logger.info("Fetching shodan results page: %s", page)
+def get_shodan_results(query, page=1):
+    logger.info("Fetching shodan results query: %s page: %s", query, page)
     api = shodan.WebAPI(API_KEY)
     try:
-        res = api.search(QUERY, page=page)
+        res = api.search(query, page=page)
     except shodan.api.WebAPIError:
         logger.info('Finished shodan results with %s page(s).', page -1)
     else:
         if res:
-            get_shodan_results.delay(page=page+1)
+            get_shodan_results.delay(query, page=page+1)
         for r in res.get('matches', []):
             get_screenshot.delay(r)
         return res

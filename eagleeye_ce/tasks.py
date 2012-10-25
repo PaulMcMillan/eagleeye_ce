@@ -1,45 +1,32 @@
 import os
 import signal
 import logging
-import subprocess
-from pyvirtualdisplay import Display
-from selenium import webdriver
-import selenium
+
+import pyvirtualdisplay
+
 import httplib
 import shodan
-from celery import Celery
-from celery import group
-from celery import exceptions
+
 from celery import Task
-from celery import signals
+import celery.exceptions as celery_exceptions
+
+from selenium import webdriver
 import selenium.webdriver.chrome.service as chrome_service
+import selenium.common.exceptions
+
+from eagleeye_ce import celery
+from eagleeye_ce import API_KEY
 
 
 logger = logging.getLogger(__name__)
 
 
-try:
-    API_KEY = os.environ['SHODAN_API_KEY']
-except KeyError:
-    try:
-        API_KEY = open('SHODAN_API_KEY').read()
-    except IOError:
-        print ("Put your shodan API key in the environment with\n"
-               "export SHODAN_API_KEY=yourkeyhere\n"
-               "or put your key in a file named SHODAN_API_KEY.")
-        exit()
-
-
-celery = Celery('tasks')
-celery.config_from_object('celeryconfig')
-
-
 # set up the xvfb display
-display = Display(visible=0, size=(600, 600))
+display = pyvirtualdisplay.Display(visible=0, size=(600, 600))
 display.start()
 
 
-# Set up the webdriver
+# Set up the webdriver options
 options = webdriver.ChromeOptions()
 options.add_argument('--start-maximized')
 options.add_argument('--disable-java')
@@ -128,7 +115,7 @@ def get_screenshot(result):
                                                    'out/%s.png' % ip))
         # try going to a blank page so we get an error now if we can't
         driver.get('about:blank')
-    except exceptions.SoftTimeLimitExceeded:
+    except celery_exceptions.SoftTimeLimitExceeded:
         logger.info('Terminating overtime process: %s %s',
                     get_screenshot.request.id, ip)
         get_screenshot.terminate_driver()

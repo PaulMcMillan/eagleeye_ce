@@ -13,14 +13,11 @@ from selenium import webdriver
 from eagleeye_ce import API_KEY
 from eagleeye_ce import celery
 
-
 logger = logging.getLogger(__name__)
-
 
 # set up the xvfb display
 display = pyvirtualdisplay.Display(visible=0, size=(600, 600))
 display.start()
-
 
 # Set up the webdriver options
 options = webdriver.ChromeOptions()
@@ -76,10 +73,10 @@ def get_shodan_results(query, page=1):
     try:
         res = api.search(query, page=page)
     except shodan.api.WebAPIError:
-        logger.info('Finished shodan results with %s page(s).', page -1)
+        logger.info('Finished shodan results with %s page(s).', page - 1)
     else:
         if res:
-            get_shodan_results.delay(query, page=page+1)
+            get_shodan_results.delay(query, page=page + 1)
         for r in res.get('matches', []):
             get_screenshot.delay(r)
         return res

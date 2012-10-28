@@ -1,3 +1,4 @@
+import base64
 import httplib
 import logging
 import os
@@ -76,9 +77,11 @@ def get_shodan_results(query, page=1):
         logger.info('Finished shodan results with %s page(s).', page - 1)
     else:
         if res:
-            get_shodan_results.delay(query, page=page + 1)
+            get_shodan_results.apply_async(args=[query],
+                                           kwargs={'page': page + 1},
+                                           queue='get_shodan_result')
         for r in res.get('matches', []):
-            get_screenshot.delay(r)
+            get_screenshot.apply_async(args=[r], queue='get_screenshot')
         return res
 
 
@@ -103,9 +106,10 @@ def get_screenshot(result):
         dismiss_alerts(driver)
         logger.info('Loaded %s: %s' % (ip, driver.title))
 
-        # this seems to require an absolute path for some reason
-        driver.get_screenshot_as_file(os.path.join(os.getcwd(),
-                                                   'out/%s.png' % ip))
+        write_screenshot.apply_async(
+            args=[driver.get_screenshot_as_base64(), ip],
+            queue='write_screenshot')
+
         # try going to a blank page so we get an error now if we can't
         driver.get('about:blank')
     except celery_exceptions.SoftTimeLimitExceeded:
@@ -120,3 +124,15 @@ def get_screenshot(result):
         print repr(e)
         print 'MAJOR PROBLEM: ', ip, e
         get_screenshot.terminate_driver()
+
+
+@celery.task
+def write_screenshot(screenshot, ip):
+    """ Separate task (and queue: write_screenshot) for writing the
+    screenshots to disk, so it can be run wherever the results are
+    desired.
+    """
+    binary_screenshot = base64.b64decode(screenshot)
+    f = open(os.path.join(os.getcwd(), 'out/%s.png' % ip), 'w')
+    f.write(binary_screenshot)
+    f.close()

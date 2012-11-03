@@ -8,7 +8,7 @@ celery purge
 ./send_job.py
 
 # Run workers that consume all of the task queues
-celery -A eagleeye_ce.tasks worker --loglevel=info -Q get_shodan_results,get_screenshot,write_screenshot
+celery -A eagleeye_ce.tasks worker --loglevel=info -Q get_shodan_result,get_screenshot,write_screenshot
 
 # Alternatively, we could split it out so that you can consume the
 # screenshots from one machine while gathering them on other
@@ -16,7 +16,7 @@ celery -A eagleeye_ce.tasks worker --loglevel=info -Q get_shodan_results,get_scr
 # correct rabbitmq server.
 
 # On the cloud server
-#celery -A eagleeye_ce.tasks worker --loglevel=info -Q get_shodan_results,get_screenshot
+#celery -A eagleeye_ce.tasks worker --loglevel=info -Q get_shodan_result,get_screenshot
 
 # On the image destination
 #celery -A eagleeye_ce.tasks worker --loglevel=info -Q write_screenshot

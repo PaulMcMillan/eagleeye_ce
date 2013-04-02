@@ -13,6 +13,7 @@ from selenium import webdriver
 
 from eagleeye_ce import API_KEY
 from eagleeye_ce import celery
+from eagleeye_ce import nmap
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +82,8 @@ def get_shodan_result(query, page=1):
                                            kwargs={'page': page + 1},
                                            queue='get_shodan_result')
         for r in res.get('matches', []):
-            get_screenshot.apply_async(args=[r], queue='get_screenshot')
+            if nmap.verify_open(r['ip'], r['port']):
+                get_screenshot.apply_async(args=[r], queue='get_screenshot')
         return res
 
 

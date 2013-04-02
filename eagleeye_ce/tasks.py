@@ -82,8 +82,15 @@ def get_shodan_result(query, page=1):
                                            kwargs={'page': page + 1},
                                            queue='get_shodan_result')
         for r in res.get('matches', []):
-            if nmap.verify_open(r['ip'], r['port']):
+            # zomg horrible hax
+            try:
+                verify = nmap.verify_open(r['ip'], r['port'])
+            except Exception:
+                verify = False
+            if verify:
                 get_screenshot.apply_async(args=[r], queue='get_screenshot')
+            else:
+                print "FAILED VERIFY"
         return res
 
 

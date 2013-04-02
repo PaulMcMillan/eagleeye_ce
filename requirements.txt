@@ -1,0 +1,5 @@
+celery
+selenium
+pyvirtualdisplay
+shodan
+py.test

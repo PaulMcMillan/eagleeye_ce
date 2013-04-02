@@ -21,14 +21,16 @@ def test_basic_nmap():
              {'ip': '10.21.33.84',
               'port': 9833}]
     res = nmap.filter_open(hosts)
-    print res
+    assert len(res) == 1
 
 
 def test_nmap(host_list):
-     res = nmap.verify_open(host_list)
+     res = nmap.filter_open(host_list)
      assert type(res) is list
      # It's reasonable for at least some to be up and down
      assert len(host_list) != len(res)
+     print 'Hosts found:', len(host_list), 'Hosts Up:', len(res)
 
-# def test_selenium():
-#     screenshot.get_screenshot('google.com')
+
+def test_screenshot():
+    screenshot.get_screenshot('google.com')

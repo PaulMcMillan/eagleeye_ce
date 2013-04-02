@@ -7,11 +7,10 @@ import celery.exceptions as celery_exceptions
 import pyvirtualdisplay
 import selenium.common.exceptions
 import selenium.webdriver.chrome.service as chrome_service
-import shodan
+
 from celery import Task
 from selenium import webdriver
 
-from eagleeye_ce import API_KEY
 from eagleeye_ce import celery
 from eagleeye_ce import nmap
 
@@ -66,33 +65,6 @@ class WebDriverTask(Task):
                 pass
         # throw away the old one no matter what
         self._service = None
-
-
-@celery.task(base=WebDriverTask, soft_time_limit=300, time_limit=600)
-def get_shodan_result(query, page=1):
-    logger.info("Fetching shodan results query: %s page: %s", query, page)
-    api = shodan.WebAPI(API_KEY)
-    try:
-        res = api.search(query, page=page)
-    except shodan.api.WebAPIError:
-        logger.info('Finished shodan results with %s page(s).', page - 1)
-    else:
-        if res:
-            get_shodan_result.apply_async(args=[query],
-                                           kwargs={'page': page + 1},
-                                           queue='get_shodan_result')
-        for r in res.get('matches', []):
-            # zomg horrible hax
-            try:
-                verify = nmap.verify_open(r['ip'], r['port'])
-            except Exception:
-                verify = False
-            if verify:
-                get_screenshot.apply_async(args=[r], queue='get_screenshot')
-            else:
-                print "FAILED VERIFY"
-        return res
-
 
 def dismiss_alerts(driver):
     # handle any possible blocking alerts because selenium is stupid

@@ -78,24 +78,22 @@ def dismiss_alerts(driver):
 
 
 @celery.task(base=WebDriverTask)
-def get_screenshot(result):
-    ip = result['ip']
-    logger.info('Loading %s %s', get_screenshot.request.id, ip)
+def get_screenshot(host, port='80', proto='http'):
+    target_url = '%s://%s:%s' % (proto, host, port)
+    logger.info('Loading %s', target_url)
+    screenshot = None
     try:
         driver = get_screenshot.driver
-        driver.get('http://%s' % ip)
+        driver.get(target_url)
         dismiss_alerts(driver)
-        logger.info('Loaded %s: %s' % (ip, driver.title))
+        logger.info('Loaded %s' % target_url)
 
-        write_screenshot.apply_async(
-            args=[driver.get_screenshot_as_base64(), ip],
-            queue='write_screenshot')
+        screenshot = driver.get_screenshot_as_base64()
 
         # try going to a blank page so we get an error now if we can't
         driver.get('about:blank')
     except celery_exceptions.SoftTimeLimitExceeded:
-        logger.info('Terminating overtime process: %s %s',
-                    get_screenshot.request.id, ip)
+        logger.info('Terminating overtime process: %', target_url)
         get_screenshot.terminate_driver()
     except (selenium.common.exceptions.WebDriverException,
             httplib.BadStatusLine):
@@ -103,17 +101,20 @@ def get_screenshot(result):
         get_screenshot.terminate_driver()
     except Exception as e:
         print repr(e)
-        print 'MAJOR PROBLEM: ', ip, e
+        print 'MAJOR PROBLEM: ', target_url
         get_screenshot.terminate_driver()
+    if screenshot:
+        return screenshot, target_url
 
 
 @celery.task
-def write_screenshot(screenshot, ip):
+def write_screenshot(screenshot, url):
     """ Separate task (and queue: write_screenshot) for writing the
     screenshots to disk, so it can be run wherever the results are
     desired.
     """
     binary_screenshot = base64.b64decode(screenshot)
-    f = open(os.path.join(os.getcwd(), 'out/%s.png' % ip), 'w')
+    file_name = url.replace('://', '_').replace(':', '_')
+    f = open(os.path.join(os.getcwd(), 'out/%s.png' % file_name), 'w')
     f.write(binary_screenshot)
     f.close()

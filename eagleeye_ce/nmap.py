@@ -35,3 +35,8 @@ def filter_open(hosts):
             result.append(host)
     return result
 
+
+@celery.task
+@utils.wrap_for_chain
+def convert_hostlist(hosts):
+    return [(host['ip'], host['port']) for host in hosts]

@@ -52,13 +52,23 @@ class UnwrapMe(object):
     def __call__(self):
         return self.contents
 
+class SkipMe(object):
+    pass
+
 def wrap_for_chain(f):
     """ Too much deep magic. """
     @functools.wraps(f)
     def _wrapper(*args, **kwargs):
-        if type(args[0]) == UnwrapMe:
+        if args and type(args[0]) == SkipMe:
+            return SkipMe()
+        elif args and type(args[0]) == UnwrapMe:
             args = list(args[0]()) + list(args[1:])
-        result = f(*args, **kwargs)
+
+        try:
+            result = f(*args, **kwargs)
+        except Exception:
+            print "Skipping..."
+            return SkipMe()
 
         if type(result) == tuple and current_task.request.callbacks:
             return UnwrapMe(result)

@@ -37,17 +37,13 @@ def iterit(*args, **kwargs):
                args[0] if hasattr(args[0], '__iter__') else [args[0], ])
 
 
-# def wrap_for_chain(f):
-#     """ Too much deep magic. """
-#     def _wrapper(*args, **kwargs):
-#         if current_task.request.callbacks:
-#             next_callback = current_task.request.callbacks.pop()
-#             def _wrapped_callback(first_arg, *args, **kwargs):
-#                 args_list = list(iterit(first_arg)) + args
-#                 return next_callback(*args_list, **kwargs)
-#             current_task.request.callbacks.insert(0, _wrapped_callback)
-#         return f(*args, **kwargs)
-#     return _wrapper
+# Use this wrapper with functions in chains that return a tuple. The
+# next function in the chain will get called with that the contents of
+# tuple as (first) positional args, rather than just as just the first
+# arg. Note that both the sending and receiving function must have
+# this wrapper, which goes between the @task decorator and the
+# function definition. This wrapper should not otherwise interfere
+# when these conditions are not met.
 
 class UnwrapMe(object):
     def __init__(self, contents):

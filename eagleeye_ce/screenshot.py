@@ -58,14 +58,19 @@ class WebDriverTask(Task):
         # Don't quit the driver here because it often hangs
         self._driver = None
 
+
         if self._service is not None:
+            proc = self._service.process
             try:
                 self._service.stop()
+                proc.kill()
             except Exception:
                 # This is really bad...
                 pass
+
         # throw away the old one no matter what
         self._service = None
+
 
 def dismiss_alerts(driver):
     # handle any possible blocking alerts because selenium is stupid
@@ -95,7 +100,7 @@ def get_screenshot(host, port='80', proto='http'):
         # try going to a blank page so we get an error now if we can't
         driver.get('about:blank')
     except celery_exceptions.SoftTimeLimitExceeded:
-        logger.info('Terminating overtime process: %', target_url)
+        logger.info('Terminating overtime process: %s', target_url)
         get_screenshot.terminate_driver()
     except (selenium.common.exceptions.WebDriverException,
             httplib.BadStatusLine):

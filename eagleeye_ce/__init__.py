@@ -31,3 +31,9 @@ except KeyError:
                "export SHODAN_API_KEY=yourkeyhere\n"
                "or put your key in a file named SHODAN_API_KEY.")
         exit()
+
+
+
+from eagleeye_ce import find
+from eagleeye_ce import nmap
+from eagleeye_ce import screenshot

@@ -1,5 +1,7 @@
 import socket
 import pytest
+import base64
+import subprocess
 
 from pprint import pprint
 
@@ -31,6 +33,9 @@ def test_nmap(host_list):
      assert len(host_list) != len(res)
      print 'Hosts found:', len(host_list), 'Hosts Up:', len(res)
 
-
 def test_screenshot():
-    screenshot.get_screenshot('google.com')
+    data, url = screenshot.get_screenshot('google.com')
+    assert len(data) > 1e5
+    with open('test_screenshot.png', 'w') as f:
+        f.write(base64.b64decode(data))
+    #subprocess.check_call(['sensible-browser', 'test_screenshot.png'])

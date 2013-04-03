@@ -13,6 +13,7 @@ from selenium import webdriver
 
 from eagleeye_ce import celery
 from eagleeye_ce import nmap
+from eagleeye_ce import utils
 
 logger = logging.getLogger(__name__)
 
@@ -78,6 +79,7 @@ def dismiss_alerts(driver):
 
 
 @celery.task(base=WebDriverTask)
+@utils.wrap_for_chain
 def get_screenshot(host, port='80', proto='http'):
     target_url = '%s://%s:%s' % (proto, host, port)
     logger.info('Loading %s', target_url)
@@ -108,6 +110,7 @@ def get_screenshot(host, port='80', proto='http'):
 
 
 @celery.task
+@utils.wrap_for_chain
 def write_screenshot(screenshot, url):
     """ Separate task (and queue: write_screenshot) for writing the
     screenshots to disk, so it can be run wherever the results are

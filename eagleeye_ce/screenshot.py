@@ -60,10 +60,11 @@ class WebDriverTask(Task):
 
 
         if self._service is not None:
-            proc = self._service.process
             try:
                 self._service.stop()
-                proc.kill()
+                pgroup = os.getpgid(self._service.process.pid)
+                # os.killpg(pgroup, ) # XXX
+
             except Exception:
                 # This is really bad...
                 pass

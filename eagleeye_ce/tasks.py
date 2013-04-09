@@ -2,6 +2,7 @@ import base64
 import httplib
 import logging
 import os
+import socket
 
 import celery.exceptions as celery_exceptions
 import pyvirtualdisplay
@@ -15,6 +16,8 @@ from eagleeye_ce import API_KEY
 from eagleeye_ce import celery
 
 logger = logging.getLogger(__name__)
+
+socket.setdefaulttimeout(25)
 
 # set up the xvfb display
 display = pyvirtualdisplay.Display(visible=0, size=(600, 600))
@@ -112,7 +115,8 @@ def get_screenshot(result):
 
         # try going to a blank page so we get an error now if we can't
         driver.get('about:blank')
-    except celery_exceptions.SoftTimeLimitExceeded:
+    except (celery_exceptions.SoftTimeLimitExceeded,
+            socket.timeout):
         logger.info('Terminating overtime process: %s %s',
                     get_screenshot.request.id, ip)
         get_screenshot.terminate_driver()
